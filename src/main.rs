@@ -11,6 +11,9 @@ fn main() {
     env_logger::init();
 
     let speed: Duration = period_from_freq(700);
-    let vm: VirtualMachine = VirtualMachine::new(speed);
+    let mut vm: VirtualMachine = VirtualMachine::new(speed);
+
+    vm.load(String::from("./roms/uwcs.ch8"));
+
     chip8_base::run(vm);
 }
