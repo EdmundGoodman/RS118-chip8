@@ -9,10 +9,6 @@ pub const MEM_SIZE: usize = 4096;
 pub const STACK_LIMIT: usize = 16;
 pub const NUM_REG: usize = 16;
 
-// Could wrap Addr so new means doesn't exceed numreg?
-// Then Cell and Data are back as type aliases?
-// Also wrap frequency, and provide to_duration...
-
 #[derive(Debug)]
 pub struct VirtualMachine {
     memory: [u8; MEM_SIZE],   // Addressable memory
@@ -45,20 +41,8 @@ impl Interpreter for VirtualMachine {
     }
 }
 
-fn empty_display() -> [[Pixel; 64]; 32] {
-    [[Pixel::Black; 64]; 32]
-}
-
-fn speed_from_frequency(frequency: u32) -> Duration {
-    Duration::from_secs_f64(1_f64 / frequency as f64)
-}
-
-fn nth_bit(byte: u8, n: usize) -> bool {
-    (byte & (1 << (7 - n))) != 0
-}
-
 impl VirtualMachine {
-    pub fn new(frequency: u32) -> Self {
+    pub fn new(clock: Frequency) -> Self {
         Self {
             memory: [0; MEM_SIZE],
             mar: 0,
@@ -68,7 +52,7 @@ impl VirtualMachine {
             delay_timer: 0,
             sound_timer: 0,
             display: empty_display(),
-            speed: speed_from_frequency(frequency),
+            speed: clock.into(),
         }
     }
 
@@ -148,4 +132,19 @@ impl VirtualMachine {
         }
         None
     }
+}
+
+pub struct Frequency(pub u32);
+impl Into<Duration> for Frequency {
+    fn into(self) -> Duration {
+        Duration::from_secs_f64(1_f64 / self.0 as f64)
+    }
+}
+
+fn empty_display() -> [[Pixel; 64]; 32] {
+    [[Pixel::Black; 64]; 32]
+}
+
+fn nth_bit(byte: u8, n: usize) -> bool {
+    (byte & (1 << (7 - n))) != 0
 }
