@@ -1,44 +1,42 @@
-use super::{Addr, Cell, Nibble};
-
 #[derive(Debug)]
 pub enum Instruction {
     NOP,
     CLS,
-    JP(Addr),
-    LD(Nibble, Cell),
-    ADD(Nibble, Cell),
-    LDI(Addr),
-    DRW(Nibble, Nibble, Nibble),
+    JP(u16),
+    LD(u8, u8),
+    ADD(u8, u8),
+    LDI(u16),
+    DRW(u8, u8, u8),
+}
+
+fn first_nibble(byte: u8) -> u8 {
+    (byte & 0xF0) >> 4
+}
+
+fn second_nibble(byte: u8) -> u8 {
+    byte & 0x0F
+}
+
+fn nibbles_to_address(n1: u8, n2: u8, n3: u8) -> u16 {
+    ((n1 as u16) << 8) | ((n2 as u16) << 4) | (n3 as u16)
+}
+
+fn nibbles_to_data(n1: u8, n2: u8) -> u8 {
+    (n1 << 4) | n2
 }
 
 #[derive(Debug)]
 pub struct Opcode {
-    msb: Cell,
-    lsb: Cell,
-}
-
-fn first_nibble(byte: Cell) -> Nibble {
-    (byte & 0xF0) >> 4
-}
-
-fn second_nibble(byte: Cell) -> Nibble {
-    byte & 0x0F
-}
-
-fn nibbles_to_addr(n1: Nibble, n2: Nibble, n3: Nibble) -> Addr {
-    (Addr::from(n1) << 8) | (Addr::from(n2) << 4) | Addr::from(n3)
-}
-
-fn nibbles_to_cell(n1: Nibble, n2: Nibble) -> Cell {
-    (n1 << 4) | n2
+    msb: u8,
+    lsb: u8,
 }
 
 impl Opcode {
-    pub fn new(msb: Cell, lsb: Cell) -> Self {
+    pub fn new(msb: u8, lsb: u8) -> Self {
         Self { msb, lsb }
     }
 
-    fn as_nibbles(&self) -> (Nibble, Nibble, Nibble, Nibble) {
+    fn as_nibbles(&self) -> (u8, u8, u8, u8) {
         return (
             first_nibble(self.msb),
             second_nibble(self.msb),
@@ -48,14 +46,13 @@ impl Opcode {
     }
 
     pub fn decode(&self) -> Instruction {
-        // println!("{:?}", self.as_nibbles());
         match self.as_nibbles() {
             (0, 0, 0, 0) => Instruction::NOP,
             (0, 0, 0xE, 0) => Instruction::CLS,
-            (1, n1, n2, n3) => Instruction::JP(nibbles_to_addr(n1, n2, n3)),
-            (6, x, k1, k2) => Instruction::LD(x, nibbles_to_cell(k1, k2)),
-            (7, x, k1, k2) => Instruction::ADD(x, nibbles_to_cell(k1, k2)),
-            (0xA, n1, n2, n3) => Instruction::LDI(nibbles_to_addr(n1, n2, n3)),
+            (1, n1, n2, n3) => Instruction::JP(nibbles_to_address(n1, n2, n3)),
+            (6, x, k1, k2) => Instruction::LD(x, nibbles_to_data(k1, k2)),
+            (7, x, k1, k2) => Instruction::ADD(x, nibbles_to_data(k1, k2)),
+            (0xA, n1, n2, n3) => Instruction::LDI(nibbles_to_address(n1, n2, n3)),
             (0xD, x, y, n) => Instruction::DRW(x, y, n),
             _ => todo!("Unimplemented instruction!"),
         }
@@ -77,13 +74,13 @@ mod tests {
     }
 
     #[test]
-    fn test_nibbles_to_addr() {
-        assert_eq!(nibbles_to_addr(0xA, 0xB, 0xC), 0xABC);
+    fn test_nibbles_to_address() {
+        assert_eq!(nibbles_to_address(0xA, 0xB, 0xC), 0xABC);
     }
 
     #[test]
-    fn test_nibbles_to_cell() {
-        assert_eq!(nibbles_to_cell(0xA, 0xB), 0xAB);
+    fn test_nibbles_to_data() {
+        assert_eq!(nibbles_to_data(0xA, 0xB), 0xAB);
     }
 
     #[test]

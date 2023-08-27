@@ -2,30 +2,24 @@ mod instructions;
 
 use chip8_base::{Display, Interpreter, Keys, Pixel};
 use instructions::{Instruction, Opcode};
-use log::{debug, info};
+use log::debug;
 use std::time::Duration;
 
 pub const MEM_SIZE: usize = 4096;
 pub const STACK_LIMIT: usize = 16;
 pub const NUM_REG: usize = 16;
 
-// These could/should be wrapped newtypes?
-// https://doc.rust-lang.org/stable/book/ch19-03-advanced-traits.html#using-the-newtype-pattern-to-implement-external-traits-on-external-types
-type Nibble = u8;
-type Cell = u8;
-type Addr = u16;
-
 #[derive(Debug)]
 pub struct VirtualMachine {
-    memory: [Cell; MEM_SIZE],   // Addressable memory
-    pc: Addr,                   // Program counter
-    registers: [Cell; NUM_REG], // Vx registers
-    mar: Addr,                  // I (memory address) register
-    stack: Vec<Addr>,           // Stack memory
-    delay_timer: Cell,          // Delay timer
-    sound_timer: Cell,          // Sound timer
-    display: Display,           // Display output
-    speed: Duration,            // Clock period
+    memory: [u8; MEM_SIZE],   // Addressable memory
+    pc: u16,                  // Program counter
+    registers: [u8; NUM_REG], // Vx registers
+    mar: u16,                 // I (memory address) register
+    stack: Vec<u16>,          // Stack memory
+    delay_timer: u8,          // Delay timer
+    sound_timer: u8,          // Sound timer
+    display: Display,         // Display output
+    speed: Duration,          // Clock period
 }
 
 impl Interpreter for VirtualMachine {
@@ -93,7 +87,7 @@ impl VirtualMachine {
     fn increment_pc(&mut self) {
         self.pc += 2;
         self.pc &= (MEM_SIZE - 1) as u16;
-        // if self.pc + 2 < MEM_SIZE as Addr {
+        // if self.pc + 2 < MEM_SIZE as u16 {
         //     self.pc += 2;
         //     return;
         // }
@@ -110,7 +104,7 @@ impl VirtualMachine {
             if cur_y >= 32 {
                 break;
             }
-            let row_addr = (self.mar + row_num as Addr) % (MEM_SIZE as Addr);
+            let row_addr = (self.mar + row_num as u16) % (MEM_SIZE as u16);
             let row_memory = self.memory[row_addr as usize];
             for pixel_num in 0..8 {
                 let cur_x = x_pos + pixel_num;
