@@ -85,4 +85,12 @@ mod tests {
     fn test_nibbles_to_cell() {
         assert_eq!(nibbles_to_cell(0xA, 0xB), 0xAB);
     }
+
+    #[test]
+    fn test_new_opcode() {
+        let (msb, lsb) = (5, 10);
+        let new_opcode = Opcode::new(msb, lsb);
+        assert_eq!(new_opcode.msb, msb);
+        assert_eq!(new_opcode.lsb, lsb);
+    }
 }
