@@ -29,7 +29,7 @@ impl Interpreter for VirtualMachine {
         let opcode = self.fetch();
         debug!("Opcode: {:?}", opcode);
 
-        let instruction = opcode.decode();
+        let instruction = Instruction::decode(opcode);
         debug!("Instruction {:?}", instruction);
 
         self.execute(instruction)
@@ -76,7 +76,7 @@ impl VirtualMachine {
 
     fn fetch(&mut self) -> Opcode {
         // Could this be an array slice instead?
-        let opcode = Opcode::new(
+        let opcode = Opcode(
             self.memory[self.pc as usize],
             self.memory[(self.pc + 1) as usize],
         );

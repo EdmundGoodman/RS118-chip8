@@ -9,6 +9,35 @@ pub enum Instruction {
     DRW(u8, u8, u8),
 }
 
+impl Instruction {
+    pub fn decode(opcode: Opcode) -> Self {
+        match opcode.as_nibbles() {
+            (0, 0, 0, 0) => Self::NOP,
+            (0, 0, 0xE, 0) => Self::CLS,
+            (1, n1, n2, n3) => Self::JP(nibbles_to_address(n1, n2, n3)),
+            (6, x, k1, k2) => Self::LD(x, nibbles_to_data(k1, k2)),
+            (7, x, k1, k2) => Self::ADD(x, nibbles_to_data(k1, k2)),
+            (0xA, n1, n2, n3) => Self::LDI(nibbles_to_address(n1, n2, n3)),
+            (0xD, x, y, n) => Self::DRW(x, y, n),
+            _ => todo!("Unimplemented instruction!"),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct Opcode(pub u8, pub u8);
+
+impl Opcode {
+    fn as_nibbles(&self) -> (u8, u8, u8, u8) {
+        return (
+            first_nibble(self.0),
+            second_nibble(self.0),
+            first_nibble(self.1),
+            second_nibble(self.1),
+        );
+    }
+}
+
 fn first_nibble(byte: u8) -> u8 {
     (byte & 0xF0) >> 4
 }
@@ -23,40 +52,6 @@ fn nibbles_to_address(n1: u8, n2: u8, n3: u8) -> u16 {
 
 fn nibbles_to_data(n1: u8, n2: u8) -> u8 {
     (n1 << 4) | n2
-}
-
-#[derive(Debug)]
-pub struct Opcode {
-    msb: u8,
-    lsb: u8,
-}
-
-impl Opcode {
-    pub fn new(msb: u8, lsb: u8) -> Self {
-        Self { msb, lsb }
-    }
-
-    fn as_nibbles(&self) -> (u8, u8, u8, u8) {
-        return (
-            first_nibble(self.msb),
-            second_nibble(self.msb),
-            first_nibble(self.lsb),
-            second_nibble(self.lsb),
-        );
-    }
-
-    pub fn decode(&self) -> Instruction {
-        match self.as_nibbles() {
-            (0, 0, 0, 0) => Instruction::NOP,
-            (0, 0, 0xE, 0) => Instruction::CLS,
-            (1, n1, n2, n3) => Instruction::JP(nibbles_to_address(n1, n2, n3)),
-            (6, x, k1, k2) => Instruction::LD(x, nibbles_to_data(k1, k2)),
-            (7, x, k1, k2) => Instruction::ADD(x, nibbles_to_data(k1, k2)),
-            (0xA, n1, n2, n3) => Instruction::LDI(nibbles_to_address(n1, n2, n3)),
-            (0xD, x, y, n) => Instruction::DRW(x, y, n),
-            _ => todo!("Unimplemented instruction!"),
-        }
-    }
 }
 
 #[cfg(test)]
@@ -85,9 +80,10 @@ mod tests {
 
     #[test]
     fn test_new_opcode() {
-        let (msb, lsb) = (5, 10);
-        let new_opcode = Opcode::new(msb, lsb);
-        assert_eq!(new_opcode.msb, msb);
-        assert_eq!(new_opcode.lsb, lsb);
+        let (msb, lsb) = (0xAB, 0xCD);
+        let new_opcode = Opcode(msb, lsb);
+        assert_eq!(new_opcode.0, msb);
+        assert_eq!(new_opcode.1, lsb);
+        assert_eq!(new_opcode.as_nibbles(), (0xA, 0xB, 0xC, 0xD));
     }
 }
