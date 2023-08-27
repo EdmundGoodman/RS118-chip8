@@ -9,6 +9,10 @@ pub const MEM_SIZE: usize = 4096;
 pub const STACK_LIMIT: usize = 16;
 pub const NUM_REG: usize = 16;
 
+// Could wrap Addr so new means doesn't exceed numreg?
+// Then Cell and Data are back as type aliases?
+// Also wrap frequency, and provide to_duration...
+
 #[derive(Debug)]
 pub struct VirtualMachine {
     memory: [u8; MEM_SIZE],   // Addressable memory
@@ -25,13 +29,10 @@ pub struct VirtualMachine {
 impl Interpreter for VirtualMachine {
     fn step(&mut self, keys: &Keys) -> Option<Display> {
         debug!("Program Counter: {}", self.pc);
-
         let opcode = self.fetch();
         debug!("Opcode: {:?}", opcode);
-
         let instruction = Instruction::decode(opcode);
         debug!("Instruction {:?}", instruction);
-
         self.execute(instruction)
     }
 
@@ -50,6 +51,10 @@ fn empty_display() -> [[Pixel; 64]; 32] {
 
 fn speed_from_frequency(frequency: u32) -> Duration {
     Duration::from_secs_f64(1_f64 / frequency as f64)
+}
+
+fn nth_bit(byte: u8, n: usize) -> bool {
+    (byte & (1 << (7 - n))) != 0
 }
 
 impl VirtualMachine {
@@ -75,7 +80,6 @@ impl VirtualMachine {
     }
 
     fn fetch(&mut self) -> Opcode {
-        // Could this be an array slice instead?
         let opcode = Opcode(
             self.memory[self.pc as usize],
             self.memory[(self.pc + 1) as usize],
@@ -87,70 +91,35 @@ impl VirtualMachine {
     fn increment_pc(&mut self) {
         self.pc += 2;
         self.pc &= (MEM_SIZE - 1) as u16;
-        // if self.pc + 2 < MEM_SIZE as u16 {
-        //     self.pc += 2;
-        //     return;
-        // }
-        // self.pc = 0;
     }
 
     fn draw(&mut self, x: u8, y: u8, n: u8) {
-        let x_pos = self.registers[x as usize] % 64;
-        let y_pos = self.registers[y as usize] % 32;
+        let x_offset = (self.registers[x as usize] % 64) as usize;
+        let y_offset = (self.registers[y as usize] % 32) as usize;
         self.registers[0x0F] = 0;
 
-        for row_num in 0..n {
-            let cur_y = y_pos + row_num;
-            if cur_y >= 32 {
+        let sprite_addr = self.mar as usize;
+        let sprite = &self.memory[sprite_addr..(sprite_addr + n as usize)];
+        for (row_num, row) in sprite.iter().enumerate() {
+            let y_pos = y_offset + row_num;
+            if y_pos > 31 {
                 break;
             }
-            let row_addr = (self.mar + row_num as u16) % (MEM_SIZE as u16);
-            let row_memory = self.memory[row_addr as usize];
             for pixel_num in 0..8 {
-                let cur_x = x_pos + pixel_num;
-                if cur_x >= 64 {
+                let x_pos = x_offset + pixel_num;
+                if x_pos > 63 {
                     break;
                 }
-                let pixel_memory = (row_memory & (1 << (7 - pixel_num))) != 0;
-                if pixel_memory == true {
-                    if self.display[cur_y as usize][cur_x as usize] == Pixel::White {
-                        self.display[cur_y as usize][cur_x as usize] = Pixel::Black;
+                if nth_bit(*row, pixel_num) == true {
+                    if self.display[y_pos][x_pos] == Pixel::White {
+                        self.display[y_pos][x_pos] = Pixel::Black;
                         self.registers[0x0F] = 1;
                     } else {
-                        self.display[cur_y as usize][cur_x as usize] = Pixel::White;
+                        self.display[y_pos][x_pos] = Pixel::White;
                     }
                 }
             }
         }
-
-        // let tlx = self.registers[x as usize] % 64;
-        // let tly = self.registers[y as usize] % 32;
-        // self.registers[0xF] = 0;
-        // let ind = self.mar as usize;
-        // let sprite = &self.memory[ind..(ind + n as usize)];
-
-        // for (i, row) in sprite.iter().enumerate() {
-        //     let pxy = tly + i as u8;
-        //     if pxy > 31 {
-        //         break;
-        //     }
-
-        //     for j in 0..8 {
-        //         let pxx = tlx + j;
-        //         if pxx > 63 {
-        //             break;
-        //         }
-        //         let old_px = &mut self.display[pxy as usize][pxx as usize];
-        //         let mask = 2_u8.pow(7 - j as u32);
-        //         let new_u8 = (row & mask) >> (7 - j);
-        //         let new_px: chip8_base::Pixel = new_u8.try_into().unwrap();
-        //         if (new_px & *old_px).into() {
-        //             // if collision
-        //             self.registers[0xF] = 1
-        //         }
-        //         *old_px ^= new_px;
-        //     }
-        // }
     }
 
     fn execute(&mut self, instruction: Instruction) -> Option<Display> {
