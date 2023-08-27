@@ -17,16 +17,15 @@ type Addr = u16;
 
 #[derive(Debug)]
 pub struct VirtualMachine {
-    pub memory: [Cell; MEM_SIZE],   // Addressable memory
-    pub pc: Addr,                   // Program counter
-    pub registers: [Cell; NUM_REG], // Vx registers
-    pub mar: Addr,                  // I (memory address) register
-    pub stack: [Addr; STACK_LIMIT], // Stack memory
-    pub stack_pointer: Cell,        // Stack pointer
-    pub delay_timer: Cell,          // Delay timer
-    pub sound_timer: Cell,          // Sound timer
-    pub display: Display,           // Display output
-    speed: Duration,                // Clock period
+    memory: [Cell; MEM_SIZE],   // Addressable memory
+    pc: Addr,                   // Program counter
+    registers: [Cell; NUM_REG], // Vx registers
+    mar: Addr,                  // I (memory address) register
+    stack: Vec<Addr>,           // Stack memory
+    delay_timer: Cell,          // Delay timer
+    sound_timer: Cell,          // Sound timer
+    display: Display,           // Display output
+    speed: Duration,            // Clock period
 }
 
 impl Interpreter for VirtualMachine {
@@ -66,8 +65,7 @@ impl VirtualMachine {
             mar: 0,
             pc: 0,
             registers: [0; NUM_REG],
-            stack: [0; STACK_LIMIT],
-            stack_pointer: 0,
+            stack: vec![0; STACK_LIMIT],
             delay_timer: 0,
             sound_timer: 0,
             display: empty_display(),
