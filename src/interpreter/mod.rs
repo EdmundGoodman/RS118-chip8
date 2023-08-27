@@ -76,19 +76,8 @@ impl VirtualMachine {
     }
 
     pub fn load(mut self, filename: &str) -> Self {
-        // let program = std::fs::read(filename).expect("Unable to read ROM file!");
-        // self.memory[0x200..(0x200 + program.len())].copy_from_slice(&program);
-        // self.pc = 0x200;
-        // println!("{:?}", self.memory);
-        // self.memory = [0; MEM_SIZE];
-
-        let mut rom = std::fs::read(filename).expect("Unable to read ROM file!");
-        rom.resize(MEM_SIZE, 0);
-        let rom_arr: [Cell; MEM_SIZE] = rom.try_into().expect("Unable to load ROM!");
-        self.memory = rom_arr;
-        // println!("{:?}", self.memory);
-
-        // panic!("Die.");
+        let program = std::fs::read(filename).expect("Unable to read ROM file!");
+        self.memory[0x200..(0x200 + program.len())].copy_from_slice(&program);
         self.pc = 0x200;
         self
     }

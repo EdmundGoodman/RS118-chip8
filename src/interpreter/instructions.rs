@@ -26,11 +26,11 @@ fn second_nibble(byte: Cell) -> Nibble {
 }
 
 fn nibbles_to_addr(n1: Nibble, n2: Nibble, n3: Nibble) -> Addr {
-    (Addr::from(n1) << 8) & (Addr::from(n2) << 4) & Addr::from(n3)
+    (Addr::from(n1) << 8) | (Addr::from(n2) << 4) | Addr::from(n3)
 }
 
 fn nibbles_to_cell(n1: Nibble, n2: Nibble) -> Cell {
-    (n1 << 4) & n2
+    (n1 << 4) | n2
 }
 
 impl Opcode {
@@ -59,5 +59,30 @@ impl Opcode {
             (0xD, x, y, n) => Instruction::DRW(x, y, n),
             _ => todo!("Unimplemented instruction!"),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_first_nibble() {
+        assert_eq!(first_nibble(0xAB), 0xA);
+    }
+
+    #[test]
+    fn test_second_nibble() {
+        assert_eq!(second_nibble(0xAB), 0xB);
+    }
+
+    #[test]
+    fn test_nibbles_to_addr() {
+        assert_eq!(nibbles_to_addr(0xA, 0xB, 0xC), 0xABC);
+    }
+
+    #[test]
+    fn test_nibbles_to_cell() {
+        assert_eq!(nibbles_to_cell(0xA, 0xB), 0xAB);
     }
 }
