@@ -34,8 +34,8 @@ fn nibbles_to_cell(n1: Nibble, n2: Nibble) -> Cell {
 }
 
 impl Opcode {
-    pub fn new(msb: Cell, lsb: Cell) -> Opcode {
-        Opcode { msb, lsb }
+    pub fn new(msb: Cell, lsb: Cell) -> Self {
+        Self { msb, lsb }
     }
 
     fn as_nibbles(&self) -> (Nibble, Nibble, Nibble, Nibble) {
